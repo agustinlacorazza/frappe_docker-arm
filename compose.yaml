@@ -1,5 +1,6 @@
 x-customizable-image: &customizable_image
-  image: ${CUSTOM_IMAGE:-frappe/erpnext}:${CUSTOM_TAG:-$ERPNEXT_VERSION}
+  # Utiliza imágenes personalizadas para ARM64
+  image: ${CUSTOM_IMAGE:-frappe/erpnext-arm64}:${CUSTOM_TAG:-v14}
   pull_policy: ${PULL_POLICY:-always}
 
 x-depends-on-configurator: &depends_on_configurator
@@ -29,10 +30,10 @@ services:
         bench set-config -g redis_socketio "redis://$$REDIS_QUEUE";
         bench set-config -gp socketio_port $$SOCKETIO_PORT;
     environment:
-      DB_HOST: ${DB_HOST:-}
-      DB_PORT: ${DB_PORT:-}
-      REDIS_CACHE: ${REDIS_CACHE:-}
-      REDIS_QUEUE: ${REDIS_QUEUE:-}
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      REDIS_CACHE: redis-cache:6379
+      REDIS_QUEUE: redis-queue:6379
       SOCKETIO_PORT: 9000
     depends_on: {}
 
@@ -83,6 +84,30 @@ services:
     <<: *backend_defaults
     platform: linux/arm64
     command: bench schedule
+
+# Redis y MariaDB con versiones ARM64
+  redis-cache:
+    image: arm64v8/redis:6.2-alpine
+    platform: linux/arm64
+    volumes:
+      - /opt/redis/cache:/data
+
+  redis-queue:
+    image: arm64v8/redis:6.2-alpine
+    platform: linux/arm64
+    volumes:
+      - /opt/redis/queue:/data
+
+  mariadb:
+    image: arm64v8/mariadb:10.5
+    platform: linux/arm64
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: frappe
+      MYSQL_PASSWORD: frappe
+      MYSQL_DATABASE: frappe
+    volumes:
+      - /opt/mariadb:/var/lib/mysql
 
 volumes:
   sites:
