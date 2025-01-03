@@ -1,6 +1,6 @@
 FROM node:16-slim
 
-# Instalar dependencias para el frontend
+# Instalar dependencias necesarias
 RUN apt-get update && apt-get install -y \
     build-essential \
     git \
@@ -9,8 +9,10 @@ RUN apt-get update && apt-get install -y \
 # Crear directorio de trabajo
 WORKDIR /home/frappe/frontend
 
-# Instalar dependencias de frontend
-COPY ./frontend/package.json ./frontend/
+# Copiar el archivo package.json
+COPY frontend/package.json /home/frappe/frontend/
+
+# Instalar dependencias
 RUN npm install
 
 # Comando de inicio
