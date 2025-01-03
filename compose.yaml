@@ -1,7 +1,10 @@
+version: '3.9'
+
 x-customizable-image: &customizable_image
-  # Utiliza imágenes personalizadas para ARM64
-  image: ${CUSTOM_IMAGE:-frappe/erpnext-arm64}:${CUSTOM_TAG:-v14}
-  pull_policy: ${PULL_POLICY:-always}
+  # No usamos una imagen preconstruida, construimos localmente desde Dockerfiles
+  build:
+    context: .
+    dockerfile: build/backend.Dockerfile
 
 x-depends-on-configurator: &depends_on_configurator
   depends_on:
@@ -38,23 +41,33 @@ services:
     depends_on: {}
 
   backend:
-    <<: *backend_defaults
+    build:
+      context: .
+      dockerfile: build/backend.Dockerfile
     platform: linux/arm64
+    environment:
+      REDIS_CACHE: redis-cache:6379
+      REDIS_QUEUE: redis-queue:6379
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      DB_USER: frappe
+      DB_PASSWORD: frappe
+      DB_NAME: frappe
+    volumes:
+      - /opt/erp/sites:/home/frappe/frappe-bench/sites
+    depends_on:
+      - mariadb
+      - redis-cache
+      - redis-queue
 
   frontend:
-    <<: *customizable_image
+    build:
+      context: .
+      dockerfile: build/frontend.Dockerfile
     platform: linux/arm64
-    command:
-      - nginx-entrypoint.sh
     environment:
       BACKEND: backend:8000
       SOCKETIO: websocket:9000
-      FRAPPE_SITE_NAME_HEADER: ${FRAPPE_SITE_NAME_HEADER:-$$host}
-      UPSTREAM_REAL_IP_ADDRESS: ${UPSTREAM_REAL_IP_ADDRESS:-127.0.0.1}
-      UPSTREAM_REAL_IP_HEADER: ${UPSTREAM_REAL_IP_HEADER:-X-Forwarded-For}
-      UPSTREAM_REAL_IP_RECURSIVE: ${UPSTREAM_REAL_IP_RECURSIVE:-off}
-      PROXY_READ_TIMEOUT: ${PROXY_READ_TIMEOUT:-120}
-      CLIENT_MAX_BODY_SIZE: ${CLIENT_MAX_BODY_SIZE:-50m}
     volumes:
       - /opt/erp/sites:/home/frappe/frappe-bench/sites
     depends_on:
@@ -62,13 +75,16 @@ services:
       - websocket
 
   websocket:
-    <<: [*depends_on_configurator, *customizable_image]
+    build:
+      context: .
+      dockerfile: build/socketio.Dockerfile
     platform: linux/arm64
-    command:
-      - node
-      - /home/frappe/frappe-bench/apps/frappe/socketio.js
+    environment:
+      REDIS_SOCKETIO: redis-socketio:6379
     volumes:
       - /opt/erp/sites:/home/frappe/frappe-bench/sites
+    depends_on:
+      - redis-socketio
 
   queue-short:
     <<: *backend_defaults
