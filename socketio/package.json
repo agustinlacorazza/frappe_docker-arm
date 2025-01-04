@@ -1,0 +1,15 @@
+{
+    "name": "socketio",
+    "version": "1.0.0",
+    "description": "SocketIO para ERPNext",
+    "main": "socketio.js",
+    "dependencies": {
+      "socket.io": "^4.0.0"
+    },
+    "scripts": {
+      "start": "node socketio.js"
+    },
+    "author": "",
+    "license": "ISC"
+  }
+  

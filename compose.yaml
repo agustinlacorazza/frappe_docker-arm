@@ -1,7 +1,6 @@
 version: '3.9'
 
 services:
-  # Backend Service
   backend:
     image: alacorazza/frappe-backend-arm64:v14
     platform: linux/arm64
@@ -22,7 +21,6 @@ services:
       - redis-queue
       - redis-socketio
 
-  # Frontend Service
   frontend:
     image: alacorazza/frappe-frontend-arm64:v14
     platform: linux/arm64
@@ -35,7 +33,6 @@ services:
       - backend
       - websocket
 
-  # WebSocket Service
   websocket:
     image: alacorazza/frappe-socketio-arm64:v14
     platform: linux/arm64
@@ -46,7 +43,6 @@ services:
     depends_on:
       - redis-socketio
 
-  # Redis for Cache
   redis-cache:
     image: arm64v8/redis:6.2-alpine
     platform: linux/arm64
@@ -54,21 +50,18 @@ services:
       - /opt/redis/cache:/data
     command: ["redis-server", "--maxmemory-policy", "allkeys-lru"]
 
-  # Redis for Queue
   redis-queue:
     image: arm64v8/redis:6.2-alpine
     platform: linux/arm64
     volumes:
       - /opt/redis/queue:/data
 
-  # Redis for WebSocket
   redis-socketio:
     image: arm64v8/redis:6.2-alpine
     platform: linux/arm64
     volumes:
       - /opt/redis/socketio:/data
 
-  # MariaDB Service
   mariadb:
     image: arm64v8/mariadb:10.5
     platform: linux/arm64
